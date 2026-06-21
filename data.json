@@ -1,0 +1,45 @@
+{
+  "CLASSES": [
+    {
+      "id": 1,
+      "name": "축구 교실",
+      "day": "월",
+      "startTime": "14:00",
+      "endTime": "15:30",
+      "limit": 2
+    },
+    {
+      "id": 2,
+      "name": "로봇 과학",
+      "day": "월",
+      "startTime": "15:00",
+      "endTime": "16:30",
+      "limit": 15
+    },
+    {
+      "id": 3,
+      "name": "창의 미술",
+      "day": "화",
+      "startTime": "14:00",
+      "endTime": "15:30",
+      "limit": 15
+    },
+    {
+      "id": 4,
+      "name": "코딩 기초",
+      "day": "월",
+      "startTime": "16:00",
+      "endTime": "17:30",
+      "limit": 20
+    }
+  ],
+  "PAGE_TITLES": {
+    "mainTitle": "소주한국학교 유초등부 및 유치원",
+    "subTitle": "26-2학기 방과후 수업 신청"
+  },
+  "REGISTRATION_CONFIG": {
+    "startTime": "2026-06-19T00:00:00+09:00",
+    "endTime": "2026-09-13T23:59:59+09:00"
+  },
+  "studentRegistrations": {}
+}

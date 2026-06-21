@@ -1,0 +1,12 @@
+{
+  "name": "sks-afterschool",
+  "version": "1.0.0",
+  "description": "소주한국학교 방과후 수강신청 시스템",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

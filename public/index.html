@@ -20,8 +20,7 @@
         #studentName { width: 110px; text-align: center; }
         #studentPassword { flex: 1; }
         
-        /* 🔘 조회용 단추 스타일 */
-        button.check-btn { background-color: #0f172a; color: white; padding: 10px 15px; font-size: 14px; font-weight: bold; border-radius: 6px; white-space: nowrap; }
+        button.check-btn { background-color: #0f172a; color: white; padding: 10px 15px; font-size: 14px; font-weight: bold; border-radius: 6px; white-space: nowrap; cursor: pointer; }
         button.check-btn:hover { background-color: #334155; }
 
         .my-status-section { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; }
@@ -81,3 +80,45 @@
     </div>
 
     <div class="my-status-section" id="myStatusSection">
+        <div class="my-status-title">🔔 나의 수강 신청 완료 내역</div>
+        <div id="myClassListContainer"></div>
+    </div>
+
+    <h2>📚 개설 강좌 목록</h2>
+    <div class="class-list" id="classListContainer">
+        <p style="text-align: center; color: #999; padding: 20px;">강좌 정보를 불러오는 중입니다...</p>
+    </div>
+
+    <div class="footer">
+        소주한국학교
+    </div>
+</div>
+
+<script>
+    let systemClasses = [];
+    let registrations = [];
+
+    // 💡 개별 독립 비동기 구조로 변경 (서로 간섭을 주어 다운되는 버그 원천 차단)
+    async function initSystem() {
+        try {
+            // 1. 클래스 정보 가져오기
+            const classRes = await fetch('/api/classes');
+            const classData = await classRes.json();
+            if (classData) {
+                document.getElementById('viewMainTitle').innerText = classData.titles?.mainTitle || '방과후 학교';
+                document.getElementById('viewSubTitle').innerText = classData.titles?.subTitle || '수강 신청 시스템';
+                document.getElementById('viewStartTime').innerText = classData.config?.startTime || '미지정';
+                document.getElementById('viewEndTime').innerText = classData.config?.endTime || '미지정';
+                systemClasses = Array.isArray(classData.classes) ? classData.classes : [];
+            }
+        } catch (e) {
+            console.error("클래스 로드 실패:", e);
+        }
+
+        try {
+            // 2. 신청 내역 가져오기 (1번이 실패하더라도 독립적으로 수행)
+            const statusRes = await fetch('/api/status');
+            const regsData = await statusRes.json();
+            registrations = Array.isArray(regsData) ? regsData : [];
+        } catch (e) {
+            console.error("신청 내역 로드 실패:", e

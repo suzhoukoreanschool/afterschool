@@ -108,19 +108,35 @@
                 }).catch(err => console.error(err));
         }
 
-        // 요일 변경 시 시간을 자동으로 채워주는 함수
+        // 요일 변경 시 시간을 자동으로 채워주는 함수 (오류 수정 완료)
         function handleDayChange(selectElement) {
             const row = selectElement.parentElement;
             const startTimeInput = row.querySelector('.cls-start');
             const endTimeInput = row.querySelector('.cls-end');
             const selectedDay = selectElement.value;
 
+            // '토요일(1교시)' 형태로 DB에서 읽어오는 값과 셀렉트의 value 매칭 보완
             if (['월', '화', '수', '목'].includes(selectedDay)) {
                 startTimeInput.value = '15:30';
                 endTimeInput.value = '16:10';
-            } else if (selectedDay === '토1') {
+            } else if (selectedDay === '토1' || selectedDay === '토요일(1교시)') {
                 startTimeInput.value = '08:50';
                 endTimeInput.value = '10:20';
-            } else if (selectedDay === '토2') {
+            } else if (selectedDay === '토2' || selectedDay === '토요일(2교시)') {
                 startTimeInput.value = '10:30';
-                endTimeInput.value
+                endTimeInput.value = '12:00';
+            } else {
+                startTimeInput.value = '';
+                endTimeInput.value = '';
+            }
+        }
+
+        // 강좌 UI 행 추가 함수
+        function addClassRow(data = {}) {
+            const container = document.getElementById('classContainer');
+            const row = document.createElement('div');
+            row.className = 'class-row';
+            
+            const currentDay = data.day || '';
+
+            row

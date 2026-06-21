@@ -15,7 +15,6 @@
         .info-label { font-weight: bold; color: #475569; }
         .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; align-items: center; }
         .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        /* 학년 선택 박스 스타일 스타일 스타일 */
         .form-group select[id="studentGrade"] { width: 160px; text-align: center; }
         .form-group input[id="studentName"] { width: 120px; text-align: center; }
         .form-group input[id="studentPassword"] { flex: 1; }
@@ -30,6 +29,9 @@
         button.reg-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
         button.reg-btn:hover { background-color: #1d4ed8; }
         button.reg-btn:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        
+        /* 🏫 하단 푸터 스타일 추가 */
+        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 14px; letter-spacing: 1px; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -68,15 +70,17 @@
     <div class="class-list" id="classListContainer">
         <p style="text-align: center; color: #999; padding: 20px;">강좌 정보를 불러오는 중입니다...</p>
     </div>
+
+    <div class="footer">
+        소주한국학교
+    </div>
 </div>
 
 <script>
     let systemClasses = [];
     let registrations = [];
 
-    // 서버에서 강좌 설정 및 현재 신청 현황 데이터 동시 로드
     function initSystem() {
-        // 1. 강좌 구조 및 제목 로드
         fetch('/api/classes')
             .then(res => res.json())
             .then(data => {
@@ -86,7 +90,6 @@
                 document.getElementById('viewEndTime').innerText = data.config?.endTime ? new Date(data.config.endTime).toLocaleString() : '미지정';
                 systemClasses = data.classes || [];
                 
-                // 2. 신청 현황 카운트 보정을 위한 명단 로드
                 return fetch('/api/status');
             })
             .then(res => res.json())
@@ -97,7 +100,6 @@
             .catch(err => console.error("데이터 로딩 실패:", err));
     }
 
-    // UI에 강좌 카드 그리기 및 실시간 수강 가능 인원 계산 반영
     function renderClassList() {
         const container = document.getElementById('classListContainer');
         if (systemClasses.length === 0) {
@@ -106,7 +108,6 @@
         }
 
         container.innerHTML = systemClasses.map(cls => {
-            // 현재 해당 강좌를 신청한 학생 수 카운트
             const currentCount = registrations.filter(r => r.className === cls.name).length;
             const limitCount = parseInt(cls.limit) || 0;
             const isFull = currentCount >= limitCount;
@@ -117,4 +118,52 @@
                         <h3>${cls.name}</h3>
                         <div class="class-meta">
                             <span>📅 요일: <strong>${cls.day}</strong></span>
-                            <span>⏰ 시간
+                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
+                        </div>
+                    </div>
+                    <div class="class-status">
+                        <span class="count-badge ${isFull ? 'full' : ''}">
+                            신청인원: ${currentCount} / ${limitCount} 명
+                        </span>
+                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
+                            ${isFull ? '정원 마감' : '신청하기'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function submitRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if (!studentId) {
+            alert("학년을 선택해 주세요.");
+            return;
+        }
+        if (!studentName) {
+            alert("이름을 입력해 주세요.");
+            return;
+        }
+
+        fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                initSystem();
+            }
+        })
+        .catch(err => alert("신청 중 통신 오류가 발생했습니다."));
+    }
+
+    window.onload = initSystem;
+</script>
+</body>
+</html>

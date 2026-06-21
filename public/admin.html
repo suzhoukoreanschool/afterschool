@@ -20,13 +20,12 @@
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #f1f5f9; color: #1e3a8a; }
-        .csv-box { border: 2px dashed #cbd5e1; padding: 20px; text-align: center; background: #f8fafc; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h1>🛠️ 방과후 학교 관리자 시스템</h1>
-    <p>강좌 정보 설정, 신청 시간 통제, 학생 명단 업로드 및 신청 현황 확인을 관리합니다.</p>
+    <p>강좌 정보 설정, 신청 시간 통제, 신청 현황 확인을 관리합니다.</p>
 
     <div class="admin-section">
         <h2>🏷️ 메인 화면 제목 설정</h2>
@@ -57,13 +56,6 @@
     </div>
 
     <div class="admin-section">
-        <h2>👥 학생 비밀번호 명단 일괄 등록 (CSV)</h2>
-        <p style="font-size: 13px; color: #666;">엑셀에서 <strong>학년반, 이름, 비밀번호</strong> 3개 열로 작성한 뒤 [CSV(쉼표로 분리)] 형식으로 저장하여 올려주세요.</p>
-        <div class="csv-box" id="dropZone">📄 여기에 CSV 파일을 드래그하거나 클릭하여 선택하세요.</div>
-        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
-    </div>
-
-    <div class="admin-section">
         <h2>📊 전체 학생 수강 신청 결과 명단</h2>
         <button id="refreshListBtn" style="background-color: #475569;">🔄 명단 실시간 새로고침</button>
         <button id="downloadExcelBtn" style="background-color: #047857; margin-left: 10px;">📥 엑셀(CSV) 결과 다운로드</button>
@@ -77,46 +69,44 @@
                 </tr>
             </thead>
             <tbody id="studentListTableBody">
-                <tr><td colspan="4" style="text-align: center; color: #999;">데이터를 불러오는 중입니다...</td></tr>
+                <tr><td colspan="4" style="text-align: center; color: #999;">로딩 중...</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="admin-section" style="border: 1px solid #ff4d4d; background-color: #fff5f5; padding: 20px; border-radius: 8px; margin-top: 40px;">
         <h3 style="color: #d32f2f; margin-top: 0;">⚠️ 새 학기 데이터 초기화 구역</h3>
-        <p style="color: #666; font-size: 14px;">다음 학기 세팅을 위해 <strong>기존 학생 명단과 수강 신청 내역을 전체 삭제</strong>합니다. (강좌 틀과 제목 설정은 유지됩니다.)</p>
+        <p style="color: #666; font-size: 14px;">다음 학기 세팅을 위해 <strong>기존 수강 신청 내역을 전체 삭제</strong>합니다.</p>
         <button id="resetDataBtn" style="background-color: #d32f2f; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">
             🔄 지난 신청 내역 전체 초기화
         </button>
     </div>
 
     <script>
-        function toLocalDateTimeString(dateObj) {
-            if (!dateObj || isNaN(dateObj.getTime())) return '';
+        function toLocalDateTimeString(dateStr) {
+            if (!dateStr) return '';
+            const dateObj = new Date(dateStr);
+            if (isNaN(dateObj.getTime())) return '';
             const tzOffset = dateObj.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
-            return localISOTime;
+            return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
         }
 
-        // 1. 기존 설정 값 가져오기
+        // 1. 로드 시 설정값 가져오기
         function loadSystemConfig() {
-            fetch('/api/status')
+            fetch('/api/classes')
                 .then(res => res.json())
                 .then(data => {
-                    if (data && !Array.isArray(data)) {
-                        document.getElementById('mainTitle').value = data.titles?.mainTitle || '';
-                        document.getElementById('subTitle').value = data.titles?.subTitle || '';
-                        if(data.config?.startTime) document.getElementById('startTime').value = toLocalDateTimeString(new Date(data.config.startTime));
-                        if(data.config?.endTime) document.getElementById('endTime').value = toLocalDateTimeString(new Date(data.config.endTime));
-                        
-                        const container = document.getElementById('classContainer');
-                        container.innerHTML = '';
-                        if (data.classes) data.classes.forEach(cls => addClassRow(cls));
-                    }
+                    document.getElementById('mainTitle').value = data.titles?.mainTitle || '';
+                    document.getElementById('subTitle').value = data.titles?.subTitle || '';
+                    if(data.config?.startTime) document.getElementById('startTime').value = toLocalDateTimeString(data.config.startTime);
+                    if(data.config?.endTime) document.getElementById('endTime').value = toLocalDateTimeString(data.config.endTime);
+                    
+                    const container = document.getElementById('classContainer');
+                    container.innerHTML = '';
+                    if (data.classes) data.classes.forEach(cls => addClassRow(cls));
                 }).catch(err => console.error(err));
         }
 
-        // 강좌 UI 행 추가 함수
         function addClassRow(data = {}) {
             const container = document.getElementById('classContainer');
             const row = document.createElement('div');
@@ -135,7 +125,7 @@
 
         document.getElementById('addClassBtn').addEventListener('click', () => addClassRow());
 
-        // 2. 일괄 저장 버튼
+        // 2. 설정 일괄 반영하기 버튼 이벤트
         document.getElementById('saveAllBtn').addEventListener('click', () => {
             const classes = [];
             document.querySelectorAll('.class-row').forEach(row => {
@@ -156,39 +146,23 @@
                 classes: classes
             };
 
-            alert("⚙️ 시스템 설정 저장은 Supabase 연동에 맞춰 자동화 상태입니다.");
+            fetch('/api/admin/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if(resData.success) alert("🎉 설정 정보가 Supabase 클라우드 DB에 영구 보관되었습니다. 이제 컴퓨터를 꺼도 안전합니다.");
+            }).catch(err => alert("저장 실패했습니다."));
         });
 
-        // 3. 학생 CSV 등록 관련
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('csvFileInput');
-
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e2e8f0'; });
-        dropZone.addEventListener('dragleave', () => dropZone.style.background = '#f8fafc');
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.style.background = '#f8fafc';
-            if(e.dataTransfer.files.length) handleCsvFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', (e) => {
-            if(e.target.files.length) handleCsvFile(e.target.files[0]);
-        });
-
-        function handleCsvFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                alert("CSV 업로드 기능은 Supabase 실시간 연동 등록 체계로 진행됩니다.");
-            };
-            reader.readAsText(file, 'EUC-KR');
-        }
-
-        // 4. 현황판 리스트 불러오기 (새로고침 시 무조건 실행되어 표출되도록 확실하게 보장)
+        // 3. 학생 신청자 실시간 리스트 로드
         function loadStudentList() {
-            const tbody = document.getElementById('studentListTableBody');
             fetch('/api/status')
                 .then(res => res.json())
                 .then(list => {
+                    const tbody = document.getElementById('studentListTableBody');
                     if(!Array.isArray(list) || list.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #999;">현재 등록된 신청 명단이 없습니다.</td></tr>`;
                         return;
@@ -201,15 +175,12 @@
                             <td style="color:#777; font-size:13px;">${s.timestamp ? new Date(s.timestamp).toLocaleString() : '-'}</td>
                         </tr>
                     `).join('');
-                }).catch(err => {
-                    console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red;">데이터를 불러오는 중 오류가 발생했습니다.</td></tr>`;
-                });
+                }).catch(err => console.error(err));
         }
 
         document.getElementById('refreshListBtn').addEventListener('click', loadStudentList);
 
-        // 5. CSV 다운로드
+        // 4. CSV 결과 다운로드
         document.getElementById('downloadExcelBtn').addEventListener('click', () => {
             fetch('/api/status')
                 .then(res => res.json())
@@ -229,31 +200,20 @@
                 });
         });
 
-        // 6. 데이터 전체 초기화
+        // 5. 초기화 기능
         document.getElementById('resetDataBtn').addEventListener('click', function() {
-            if (!confirm("⚠️ 정말로 지난 학기 신청 데이터와 학생 명단을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
-            if (!confirm("🚨 정말 최종 확인하셨습니까? 버튼을 누르면 즉시 모든 신청 데이터가 파기됩니다.")) return;
-
-            fetch('/api/admin/reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
+            if (!confirm("⚠️ 정말로 신청 내역을 모두 삭제하시겠습니까?")) return;
+            fetch('/api/admin/reset', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     alert(data.message);
                     loadStudentList();
-                } else {
-                    alert("초기화 실패: " + data.message);
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("서버 통신 오류가 발생했습니다.");
-            });
+            }).catch(err => alert("통신 오류가 발생했습니다."));
         });
 
-        // 브라우저 꼬임 방지를 위해 즉시 실행 스크립트로 데이터 로드 강제 작동 처리
+        // 즉시 강제 로드
         loadSystemConfig();
         loadStudentList();
     </script>

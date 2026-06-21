@@ -8,9 +8,10 @@
         h1, h2 { color: #1e3a8a; }
         .admin-section { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input[type="text"], input[type="datetime-local"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        input[type="text"], input[type="datetime-local"], select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        input[type="text"], input[type="datetime-local"] { width: 100%; }
         .class-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f9f9f9; padding: 10px; border-radius: 5px; }
-        .class-row input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .class-row input, .class-row select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         button { background-color: #1e3a8a; color: white; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
         button:hover { background-color: #172554; }
         .add-btn { background-color: #10b981; }
@@ -107,115 +108,19 @@
                 }).catch(err => console.error(err));
         }
 
-        function addClassRow(data = {}) {
-            const container = document.getElementById('classContainer');
-            const row = document.createElement('div');
-            row.className = 'class-row';
-            row.innerHTML = `
-                <input type="text" placeholder="강좌명" class="cls-name" value="${data.name || ''}" style="flex:2;">
-                <input type="text" placeholder="요일" class="cls-day" value="${data.day || ''}" style="width:50px; text-align:center;">
-                <input type="text" placeholder="시작(14:00)" class="cls-start" value="${data.startTime || ''}" style="width:90px; text-align:center;">
-                <input type="text" placeholder="종료(15:30)" class="cls-end" value="${data.endTime || ''}" style="width:90px; text-align:center;">
-                <span style="font-size:13px; color:#666;">정원:</span>
-                <input type="text" placeholder="정원" class="cls-limit" value="${data.limit || ''}" style="width:50px; text-align:center;"> 명
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">❌ 삭제</button>
-            `;
-            container.appendChild(row);
-        }
+        // 요일 변경 시 시간을 자동으로 채워주는 함수
+        function handleDayChange(selectElement) {
+            const row = selectElement.parentElement;
+            const startTimeInput = row.querySelector('.cls-start');
+            const endTimeInput = row.querySelector('.cls-end');
+            const selectedDay = selectElement.value;
 
-        document.getElementById('addClassBtn').addEventListener('click', () => addClassRow());
-
-        // 2. 설정 일괄 반영하기 버튼 이벤트
-        document.getElementById('saveAllBtn').addEventListener('click', () => {
-            const classes = [];
-            document.querySelectorAll('.class-row').forEach(row => {
-                classes.push({
-                    name: row.querySelector('.cls-name').value,
-                    day: row.querySelector('.cls-day').value,
-                    startTime: row.querySelector('.cls-start').value,
-                    endTime: row.querySelector('.cls-end').value,
-                    limit: row.querySelector('.cls-limit').value
-                });
-            });
-
-            const payload = {
-                mainTitle: document.getElementById('mainTitle').value,
-                subTitle: document.getElementById('subTitle').value,
-                startTime: document.getElementById('startTime').value ? new Date(document.getElementById('startTime').value).toISOString() : null,
-                endTime: document.getElementById('endTime').value ? new Date(document.getElementById('endTime').value).toISOString() : null,
-                classes: classes
-            };
-
-            fetch('/api/admin/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(resData => {
-                if(resData.success) alert("🎉 설정 정보가 Supabase 클라우드 DB에 영구 보관되었습니다. 이제 컴퓨터를 꺼도 안전합니다.");
-            }).catch(err => alert("저장 실패했습니다."));
-        });
-
-        // 3. 학생 신청자 실시간 리스트 로드
-        function loadStudentList() {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(list => {
-                    const tbody = document.getElementById('studentListTableBody');
-                    if(!Array.isArray(list) || list.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #999;">현재 등록된 신청 명단이 없습니다.</td></tr>`;
-                        return;
-                    }
-                    tbody.innerHTML = list.map(s => `
-                        <tr>
-                            <td>${s.studentId || '-'}</td>
-                            <td>${s.studentName || '-'}</td>
-                            <td style="font-weight:bold; color:#1e3a8a;">${s.className || '-'}</td>
-                            <td style="color:#777; font-size:13px;">${s.timestamp ? new Date(s.timestamp).toLocaleString() : '-'}</td>
-                        </tr>
-                    `).join('');
-                }).catch(err => console.error(err));
-        }
-
-        document.getElementById('refreshListBtn').addEventListener('click', loadStudentList);
-
-        // 4. CSV 결과 다운로드
-        document.getElementById('downloadExcelBtn').addEventListener('click', () => {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(list => {
-                    if(!Array.isArray(list) || list.length === 0) return alert("다운로드할 데이터가 없습니다.");
-                    let csvContent = "\uFEFF학년반,이름,신청강좌,신청시간\n";
-                    list.forEach(s => {
-                        csvContent += `"${s.studentId || ''}","${s.studentName || ''}","${s.className || ''}","${s.timestamp || ''}"\n`;
-                    });
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `방과후신청결과_${new Date().toLocaleDateString()}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-        });
-
-        // 5. 초기화 기능
-        document.getElementById('resetDataBtn').addEventListener('click', function() {
-            if (!confirm("⚠️ 정말로 신청 내역을 모두 삭제하시겠습니까?")) return;
-            fetch('/api/admin/reset', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    loadStudentList();
-                }
-            }).catch(err => alert("통신 오류가 발생했습니다."));
-        });
-
-        // 즉시 강제 로드
-        loadSystemConfig();
-        loadStudentList();
-    </script>
-</body>
-</html>
+            if (['월', '화', '수', '목'].includes(selectedDay)) {
+                startTimeInput.value = '15:30';
+                endTimeInput.value = '16:10';
+            } else if (selectedDay === '토1') {
+                startTimeInput.value = '08:50';
+                endTimeInput.value = '10:20';
+            } else if (selectedDay === '토2') {
+                startTimeInput.value = '10:30';
+                endTimeInput.value

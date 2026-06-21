@@ -14,11 +14,10 @@
         .btn-add { background: #10b981; margin-bottom: 15px; }
         .btn-add:hover { background: #059669; }
         .btn-save { background: #ef4444; width: 100%; font-size: 16px; padding: 15px; margin-bottom: 25px; }
-        .btn-save:hover { background: #and2626; }
+        .btn-save:hover { background: #dc2626; }
         .class-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; align-items: center; background: #f1f5f9; padding: 10px; border-radius: 6px; }
         .btn-del { background: #b91c1c; padding: 6px 10px; }
         
-        /* 실시간 테이블 스타일 추가 */
         .live-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         .live-table th, .live-table td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
         .live-table th { background-color: #e2e8f0; color: #334155; }
@@ -79,7 +78,6 @@
 
 <script>
     function loadCurrentSettings() {
-        // 강좌 목록 가져오기
         fetch('/api/classes')
             .then(res => res.json())
             .then(data => {
@@ -95,7 +93,6 @@
                         data.classes.forEach(cls => addClassRow(cls.name, cls.day, cls.startTime, cls.endTime, cls.limit));
                     }
                 }
-                // 실시간 명단 연속 가져오기
                 return fetch('/api/status');
             })
             .then(res => res.json())
@@ -105,7 +102,6 @@
             .catch(err => console.error("데이터 로드 실패:", err));
     }
 
-    // 실시간 명단 테이블 그리기
     function renderLiveTable(regs) {
         const container = document.getElementById('liveListContainer');
         if(!regs || regs.length === 0) {
@@ -130,7 +126,6 @@
         }).join('');
     }
 
-    // ❌ [핵심 기능] 잘못 신청한 아이 개별 강제 취소 명령
     function kickStudent(studentId, studentName, className) {
         if(!confirm(`[관리자 권한]\n${studentId} ${studentName} 학생의 [${className}] 강좌 신청을 강제로 삭제하시겠습니까?`)) return;
 
@@ -142,7 +137,6 @@
         .then(res => res.json())
         .then(data => {
             alert(data.message);
-            // 삭제 성공 후 최신 명단 즉시 갱신
             fetch('/api/status').then(res => res.json()).then(regs => renderLiveTable(regs));
         })
         .catch(err => alert("삭제 중 통신 오류가 발생했습니다."));
@@ -197,13 +191,13 @@
         })
         .then(res => res.json())
         .then(data => {
-            alert("설정이 안전하게 일괄 저장되었습니다.");
+            alert("설정 정보가 영구 독립 공간에 안전하게 저장되었습니다.");
         })
         .catch(err => alert("저장 에러가 발생했습니다."));
     }
 
     function resetAllRegistrations() {
-        if(!confirm("⚠️ 경고!\n현재까지 접수된 모든 학생들의 수강 신청 내역을 완전히 리셋하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
+        if(!confirm("⚠️ 경고!\n현재까지 접수된 모든 학생들의 수강 신청 내역을 완전히 리셋하시겠습니까?")) return;
         fetch('/api/admin/reset', { method: 'POST' })
         .then(res => res.json())
         .then(data => {

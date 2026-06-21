@@ -98,27 +98,173 @@
     let systemClasses = [];
     let registrations = [];
 
-    // 💡 개별 독립 비동기 구조로 변경 (서로 간섭을 주어 다운되는 버그 원천 차단)
+    // 안전 독립 비동기 호출 구조화로 렌더링 뻗는 현상 차단
     async function initSystem() {
         try {
-            // 1. 클래스 정보 가져오기
             const classRes = await fetch('/api/classes');
             const classData = await classRes.json();
             if (classData) {
                 document.getElementById('viewMainTitle').innerText = classData.titles?.mainTitle || '방과후 학교';
                 document.getElementById('viewSubTitle').innerText = classData.titles?.subTitle || '수강 신청 시스템';
-                document.getElementById('viewStartTime').innerText = classData.config?.startTime || '미지정';
-                document.getElementById('viewEndTime').innerText = classData.config?.endTime || '미지정';
+                
+                // 시간 데이터 파싱 검증 추가
+                const sTime = classData.config?.startTime;
+                const eTime = classData.config?.endTime;
+                document.getElementById('viewStartTime').innerText = sTime ? sTime.replace('T', ' ') : '미지정';
+                document.getElementById('viewEndTime').innerText = eTime ? eTime.replace('T', ' ') : '미지정';
+                
                 systemClasses = Array.isArray(classData.classes) ? classData.classes : [];
             }
         } catch (e) {
-            console.error("클래스 로드 실패:", e);
+            console.error("클래스 구조 파싱 에러:", e);
         }
 
         try {
-            // 2. 신청 내역 가져오기 (1번이 실패하더라도 독립적으로 수행)
             const statusRes = await fetch('/api/status');
             const regsData = await statusRes.json();
             registrations = Array.isArray(regsData) ? regsData : [];
         } catch (e) {
-            console.error("신청 내역 로드 실패:", e
+            console.error("신청 이력 파싱 에러:", e);
+        }
+
+        renderGlobalClasses();
+    }
+
+    function renderGlobalClasses() {
+        const container = document.getElementById('classListContainer');
+        if (!systemClasses || systemClasses.length === 0) {
+            container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">현재 개설된 방과후 강좌가 없습니다. 관리자 설정을 확인해 주세요.</p>`;
+            return;
+        }
+
+        container.innerHTML = systemClasses.map(cls => {
+            const currentCount = registrations.filter(r => r.className === cls.name).length;
+            const limitCount = parseInt(cls.limit) || 0;
+            const isFull = currentCount >= limitCount;
+
+            return `
+                <div class="class-card">
+                    <div class="class-info">
+                        <h3>${cls.name}</h3>
+                        <div class="class-meta">
+                            <span>📅 요일: <strong>${cls.day}</strong></span>
+                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
+                        </div>
+                    </div>
+                    <div class="class-status">
+                        <span class="count-badge ${isFull ? 'full' : ''}">
+                            신청인원: ${currentCount} / ${limitCount} 명
+                        </span>
+                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
+                            ${isFull ? '정원 마감' : '신청하기'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function checkMyStatus() {
+        const grade = document.getElementById('studentGrade').value;
+        const name = document.getElementById('studentName').value.trim();
+        const password = document.getElementById('studentPassword').value.trim();
+        
+        const statusSection = document.getElementById('myStatusSection');
+        const myContainer = document.getElementById('myClassListContainer');
+
+        if (!grade || !name || !password) {
+            alert("조회하려면 학년, 이름, 비밀번호를 모두 입력해 주세요.");
+            statusSection.style.display = 'none';
+            return;
+        }
+
+        const myRegs = registrations.filter(r => r.studentId === grade && r.studentName === name && r.studentPassword === password);
+        
+        if (myRegs.length > 0) {
+            statusSection.style.display = 'block';
+            myContainer.innerHTML = myRegs.map(r => `
+                <div class="my-class-item">
+                    <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
+                    <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
+                </div>
+            `).join('');
+        } else {
+            statusSection.style.display = 'none';
+            alert("입력한 정보와 일치하는 수강 신청 내역이 없습니다.");
+        }
+    }
+
+    function submitRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if (!studentId) return alert("학년을 선택해 주세요.");
+        if (!studentName) return alert("이름을 입력해 주세요.");
+        if (!studentPassword) return alert("비밀번호를 입력해 주세요.");
+
+        fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            fetch('/api/status').then(res => res.json()).then(regs => {
+                registrations = Array.isArray(regs) ? regs : [];
+                renderGlobalClasses();
+                const myRegs = registrations.filter(r => r.studentId === studentId && r.studentName === studentName && r.studentPassword === studentPassword);
+                if(myRegs.length > 0) {
+                    document.getElementById('myStatusSection').style.display = 'block';
+                    document.getElementById('myClassListContainer').innerHTML = myRegs.map(r => `
+                        <div class="my-class-item">
+                            <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
+                            <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
+                        </div>
+                    `).join('');
+                }
+            });
+        })
+        .catch(err => alert("신청 중 오류가 발생했습니다."));
+    }
+
+    function cancelRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if(!confirm(`정말로 [ ${className} ] 강좌 신청을 취소하시겠습니까?`)) return;
+
+        fetch('/api/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            fetch('/api/status').then(res => res.json()).then(regs => {
+                registrations = Array.isArray(regs) ? regs : [];
+                renderGlobalClasses();
+                const myRegs = registrations.filter(r => r.studentId === studentId && r.studentName === studentName && r.studentPassword === studentPassword);
+                if (myRegs.length > 0) {
+                    document.getElementById('myStatusSection').style.display = 'block';
+                    document.getElementById('myClassListContainer').innerHTML = myRegs.map(r => `
+                        <div class="my-class-item">
+                            <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
+                            <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('myStatusSection').style.display = 'none';
+                }
+            });
+        })
+        .catch(err => alert("취소 처리 중 오류가 발생했습니다."));
+    }
+
+    window.onload = initSystem;
+</script>
+</body>
+</html>

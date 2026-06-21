@@ -13,11 +13,16 @@
         .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .info-row:last-child { margin-bottom: 0; }
         .info-label { font-weight: bold; color: #475569; }
+        
         .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; align-items: center; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .form-group select[id="studentGrade"] { width: 160px; text-align: center; }
-        .form-group input[id="studentName"] { width: 120px; text-align: center; }
-        .form-group input[id="studentPassword"] { flex: 1; }
+        .form-group select, .form-group input { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        #studentGrade { width: 160px; text-align: center; }
+        #studentName { width: 140px; text-align: center; }
+        
+        .my-status-section { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; }
+        .my-status-title { font-size: 16px; font-weight: bold; color: #166534; margin-top: 0; margin-bottom: 12px; }
+        .my-class-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 15px; border-radius: 6px; border: 1px solid #dcfce7; margin-bottom: 8px; }
+        
         .class-list { display: flex; flex-direction: column; gap: 15px; }
         .class-card { border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
         .class-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59,130,246,0.08); }
@@ -26,11 +31,14 @@
         .class-status { text-align: right; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
         .count-badge { font-size: 14px; font-weight: bold; color: #1e3a8a; }
         .count-badge.full { color: #ef4444; }
-        button.reg-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        
+        button { font-weight: bold; border-radius: 6px; cursor: pointer; border: none; transition: background 0.2s; }
+        button.reg-btn { background-color: #2563eb; color: white; padding: 10px 20px; font-size: 14px; }
         button.reg-btn:hover { background-color: #1d4ed8; }
         button.reg-btn:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        button.cancel-btn { background-color: #ef4444; color: white; padding: 6px 12px; font-size: 13px; }
+        button.cancel-btn:hover { background-color: #dc2626; }
         
-        /* 🏫 하단 푸터 스타일 추가 */
         .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 14px; letter-spacing: 1px; font-weight: 500; }
     </style>
 </head>
@@ -43,16 +51,16 @@
     <div class="info-box">
         <div class="info-row">
             <span class="info-label">⏱️ 신청 시작 시간:</span>
-            <span id="viewStartTime">-</span>
+            <span id="viewStartTime">등록된 설정이 없습니다</span>
         </div>
         <div class="info-row">
             <span class="info-label">⌛ 신청 마감 시간:</span>
-            <span id="viewEndTime">-</span>
+            <span id="viewEndTime">등록된 설정이 없습니다</span>
         </div>
     </div>
 
     <div class="form-group">
-        <select id="studentGrade">
+        <select id="studentGrade" onchange="updateView()">
             <option value="">-- 학년 선택 --</option>
             <option value="유치원">유치원</option>
             <option value="1학년">1학년</option>
@@ -62,8 +70,13 @@
             <option value="5학년">5학년</option>
             <option value="6학년">6학년</option>
         </select>
-        <input type="text" id="studentName" placeholder="이름" maxlength="10">
-        <input type="password" id="studentPassword" placeholder="비밀번호(확인용)" maxlength="20">
+        <input type="text" id="studentName" placeholder="학생 이름 입력" maxlength="10" oninput="updateView()">
+        <span style="font-size:12px; color:#718096; margin-left:5px;">※ 본인의 학년과 이름을 입력하면 신청 상태를 볼 수 있습니다.</span>
+    </div>
+
+    <div class="my-status-section" id="myStatusSection">
+        <div class="my-status-title">🔔 나의 수강 신청 완료 내역</div>
+        <div id="myClassListContainer"></div>
     </div>
 
     <h2>📚 개설 강좌 목록</h2>
@@ -80,29 +93,57 @@
     let systemClasses = [];
     let registrations = [];
 
+    // 원본 데이터를 무조건 온전하게 로드하는 핵심 함수
     function initSystem() {
         fetch('/api/classes')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('viewMainTitle').innerText = data.titles?.mainTitle || '방과후 학교';
-                document.getElementById('viewSubTitle').innerText = data.titles?.subTitle || '수강 신청 시스템';
-                document.getElementById('viewStartTime').innerText = data.config?.startTime ? new Date(data.config.startTime).toLocaleString() : '미지정';
-                document.getElementById('viewEndTime').innerText = data.config?.endTime ? new Date(data.config.endTime).toLocaleString() : '미지정';
-                systemClasses = data.classes || [];
-                
+                if (data) {
+                    document.getElementById('viewMainTitle').innerText = data.titles?.mainTitle || '방과후 학교';
+                    document.getElementById('viewSubTitle').innerText = data.titles?.subTitle || '수강 신청 시스템';
+                    document.getElementById('viewStartTime').innerText = data.config?.startTime || '미지정';
+                    document.getElementById('viewEndTime').innerText = data.config?.endTime || '미지정';
+                    systemClasses = Array.isArray(data.classes) ? data.classes : [];
+                }
                 return fetch('/api/status');
             })
             .then(res => res.json())
             .then(regs => {
                 registrations = Array.isArray(regs) ? regs : [];
-                renderClassList();
+                updateView();
             })
-            .catch(err => console.error("데이터 로딩 실패:", err));
+            .catch(err => console.error("데이터 동기화 실패:", err));
     }
 
-    function renderClassList() {
+    // 화면 UI 렌더링 전담 제어부 (강좌 삭제 현상 원천 봉쇄)
+    function updateView() {
+        const grade = document.getElementById('studentGrade').value;
+        const name = document.getElementById('studentName').value.trim();
+        
+        // 1. 내 신청 목록 제어 및 취소 영역 렌더링
+        const statusSection = document.getElementById('myStatusSection');
+        const myContainer = document.getElementById('myClassListContainer');
+        
+        if (grade && name) {
+            const myRegs = registrations.filter(r => r.studentId === grade && r.studentName === name);
+            if (myRegs.length > 0) {
+                statusSection.style.display = 'block';
+                myContainer.innerHTML = myRegs.map(r => `
+                    <div class="my-class-item">
+                        <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
+                        <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
+                    </div>
+                `).join('');
+            } else {
+                statusSection.style.display = 'none';
+            }
+        } else {
+            statusSection.style.display = 'none';
+        }
+
+        // 2. 전체 강좌 목록 안전하게 유지 배포
         const container = document.getElementById('classListContainer');
-        if (systemClasses.length === 0) {
+        if (!systemClasses || systemClasses.length === 0) {
             container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">현재 개설된 방과후 강좌가 없습니다.</p>`;
             return;
         }
@@ -134,10 +175,10 @@
         }).join('');
     }
 
+    // 수강 신청 기능
     function submitRegistration(className) {
         const studentId = document.getElementById('studentGrade').value;
         const studentName = document.getElementById('studentName').value.trim();
-        const studentPassword = document.getElementById('studentPassword').value.trim();
 
         if (!studentId) {
             alert("학년을 선택해 주세요.");
@@ -151,7 +192,7 @@
         fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+            body: JSON.stringify({ studentId, studentName, className })
         })
         .then(res => res.json())
         .then(data => {
@@ -160,7 +201,29 @@
                 initSystem();
             }
         })
-        .catch(err => alert("신청 중 통신 오류가 발생했습니다."));
+        .catch(err => alert("신청 중 오류가 발생했습니다."));
+    }
+
+    // ❌ 내 신청 내역 취소 전용 신규 API 브릿지 연결 구문
+    function cancelRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+
+        if(!confirm(`정말로 [ ${className} ] 강좌 신청을 취소하시겠습니까?`)) return;
+
+        fetch('/api/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                initSystem();
+            }
+        })
+        .catch(err => alert("취소 처리 중 오류가 발생했습니다."));
     }
 
     window.onload = initSystem;

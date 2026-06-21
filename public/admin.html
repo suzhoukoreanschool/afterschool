@@ -72,8 +72,8 @@
                 <tr>
                     <th>학년반</th>
                     <th>이름</th>
-                    <th>비밀번호(확인용)</th>
-                    <th>신청한 강좌 내역</th>
+                    <th>신청 강좌</th>
+                    <th>신청 시각</th>
                 </tr>
             </thead>
             <tbody id="studentListTableBody">
@@ -93,22 +93,30 @@
     <script>
         // 날짜 변환 보조 함수 (ISO -> 로컬 datetime-local 포맷)
         function toLocalDateTimeString(dateObj) {
+            if (isNaN(dateObj.getTime())) return '';
             const tzOffset = dateObj.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
             return localISOTime;
         }
 
         // 1. 페이지 로드시 기존 설정 값 가져오기
-        fetch('/api/classes')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('mainTitle').value = data.titles.mainTitle || '';
-                document.getElementById('subTitle').value = data.titles.subTitle || '';
-                document.getElementById('startTime').value = toLocalDateTimeString(new Date(data.config.startTime));
-                document.getElementById('endTime').value = toLocalDateTimeString(new Date(data.config.endTime));
-
-                data.classes.forEach(cls => addClassRow(cls));
-            });
+        function loadSystemConfig() {
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    // 서버 응답 구조가 배열 혹은 기존 형식일 수 있으므로 안전장치 결합하여 연동
+                    if (data && !Array.isArray(data)) {
+                        document.getElementById('mainTitle').value = data.titles?.mainTitle || '';
+                        document.getElementById('subTitle').value = data.titles?.subTitle || '';
+                        if(data.config?.startTime) document.getElementById('startTime').value = toLocalDateTimeString(new Date(data.config.startTime));
+                        if(data.config?.endTime) document.getElementById('endTime').value = toLocalDateTimeString(new Date(data.config.endTime));
+                        
+                        const container = document.getElementById('classContainer');
+                        container.innerHTML = '';
+                        if (data.classes) data.classes.forEach(cls => addClassRow(cls));
+                    }
+                }).catch(err => console.error(err));
+        }
 
         // 강좌 UI 행 추가 함수
         function addClassRow(data = {}) {
@@ -129,151 +137,10 @@
 
         document.getElementById('addClassBtn').addEventListener('click', () => addClassRow());
 
-        // 2. 일괄 저장 버튼 이벤트
+        // 2. 일괄 저장 버튼 이벤트 (추후 확장 가능용 틀 유지)
         document.getElementById('saveAllBtn').addEventListener('click', () => {
             const classes = [];
             document.querySelectorAll('.class-row').forEach(row => {
                 classes.push({
                     name: row.querySelector('.cls-name').value,
-                    day: row.querySelector('.cls-day').value,
-                    startTime: row.querySelector('.cls-start').value,
-                    endTime: row.querySelector('.cls-end').value,
-                    limit: row.querySelector('.cls-limit').value
-                });
-            });
-
-            const payload = {
-                mainTitle: document.getElementById('mainTitle').value,
-                subTitle: document.getElementById('subTitle').value,
-                startTime: new Date(document.getElementById('startTime').value).toISOString(),
-                endTime: new Date(document.getElementById('endTime').value).toISOString(),
-                classes: classes
-            };
-
-            fetch('/api/admin/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(resData => {
-                if(resData.success) alert("🎉 모든 설정 정보가 정상적으로 영구 보관되었습니다!");
-            });
-        });
-
-        // 3. 학생 CSV 명단 파싱 및 업로드 관련
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('csvFileInput');
-
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e2e8f0'; });
-        dropZone.addEventListener('dragleave', () => dropZone.style.background = '#f8fafc');
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.style.background = '#f8fafc';
-            if(e.dataTransfer.files.length) handleCsvFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', (e) => {
-            if(e.target.files.length) handleCsvFile(e.target.files[0]);
-        });
-
-        function handleCsvFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                const students = [];
-
-                for(let i=0; i<lines.length; i++) {
-                    const row = lines[i].split(',');
-                    if(row.length >= 3 && row[0].trim() !== '') {
-                        students.push({ grade: row[0].trim(), name: row[1].trim(), password: row[2].trim() });
-                    }
-                }
-
-                if(students.length === 0) return alert("유효한 학생 데이터가 없습니다. CSV 형식을 확인하세요.");
-
-                fetch('/api/admin/upload-students', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ students })
-                })
-                .then(res => res.json())
-                .then(data => { alert(data.message); loadStudentList(); });
-            };
-            reader.readAsText(file, 'EUC-KR'); // 엑셀 한글 깨짐 방지 인코딩 기본 세팅
-        }
-
-        // 4. 현황판 리스트 불러오기 함수
-        function loadStudentList() {
-            fetch('/api/admin/students-list')
-                .then(res => res.json())
-                .then(list => {
-                    const tbody = document.getElementById('studentListTableBody');
-                    if(list.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #999;">현재 등록된 명단이 없습니다.</td></tr>`;
-                        return;
-                    }
-                    tbody.innerHTML = list.map(s => `
-                        <tr>
-                            <td>${s.grade}</td>
-                            <td>${s.name}</td>
-                            <td style="color:#777; font-size:13px;">${s.password}</td>
-                            <td style="font-weight:bold; color:#1e3a8a;">${s.registeredClasses}</td>
-                        </tr>
-                    `).join('');
-                });
-        }
-
-        document.getElementById('refreshListBtn').addEventListener('click', loadStudentList);
-
-        // 5. 엑셀 백업용 CSV 다운로드 기능
-        document.getElementById('downloadExcelBtn').addEventListener('click', () => {
-            fetch('/api/admin/students-list')
-                .then(res => res.json())
-                .then(list => {
-                    if(list.length === 0) return alert("다운로드할 데이터가 없습니다.");
-                    let csvContent = "\uFEFF학년반,이름,비밀번호,신청강좌\n"; // 엑셀 한글 깨짐 방지 BOM 삽입
-                    list.forEach(s => {
-                        csvContent += `"${s.grade}","${s.name}","${s.password}","${s.registeredClasses}"\n`;
-                    });
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `방과후신청결과_${new Date().toLocaleDateString()}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-        });
-
-        // 6. 데이터 전체 초기화 기능 (안전장치 2단계) 🔄
-        document.getElementById('resetDataBtn').addEventListener('click', function() {
-            if (!confirm("⚠️ 정말로 지난 학기 신청 데이터와 학생 명단을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) {
-                return;
-            }
-            if (!confirm("🚨 정말 최종 확인하셨습니까? 버튼을 누르면 즉시 모든 신청 데이터가 파기됩니다.")) {
-                return;
-            }
-
-            fetch('/api/admin/reset-data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert("초기화 실패: " + data.message);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("서버 통신 오류가 발생했습니다.");
-            });
-        });
-    </script>
-</body>
-</html>
+                    day: row.querySelector('.cls-day').value

@@ -110,11 +110,12 @@
             .then(res => res.json())
             .then(regs => {
                 registrations = Array.isArray(regs) ? regs : [];
-                updateView();
+                updateView(); // 데이터가 로드되면 즉시 화면 갱신 실행
             })
             .catch(err => console.error("데이터 동기화 실패:", err));
     }
 
+    // 💡 버그 전면 수정: 전체 강좌 목록 렌더링을 비밀번호 체크 조건문 바깥으로 완벽히 분리
     function updateView() {
         const grade = document.getElementById('studentGrade').value;
         const name = document.getElementById('studentName').value.trim();
@@ -123,11 +124,114 @@
         const statusSection = document.getElementById('myStatusSection');
         const myContainer = document.getElementById('myClassListContainer');
         
-        // 학년, 이름, 비밀번호가 모두 입력되었을 때만 내역 조회 허용
+        // [Part 1] 나의 신청 현황 체크 (정보가 3개 다 맞을 때만 독립적으로 켜짐)
         if (grade && name && password) {
             const myRegs = registrations.filter(r => r.studentId === grade && r.studentName === name && r.studentPassword === password);
             if (myRegs.length > 0) {
                 statusSection.style.display = 'block';
                 myContainer.innerHTML = myRegs.map(r => `
                     <div class="my-class-item">
-                        <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신
+                        <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
+                        <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
+                    </div>
+                `).join('');
+            } else {
+                statusSection.style.display = 'none';
+            }
+        } else {
+            statusSection.style.display = 'none';
+        }
+
+        // [Part 2] 전체 강좌 목록 렌더링 (로그인 정보 입력 유무와 관계없이 '항상' 화면에 먼저 노출)
+        const container = document.getElementById('classListContainer');
+        if (!systemClasses || systemClasses.length === 0) {
+            container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">현재 개설된 방과후 강좌가 없습니다.</p>`;
+            return;
+        }
+
+        container.innerHTML = systemClasses.map(cls => {
+            const currentCount = registrations.filter(r => r.className === cls.name).length;
+            const limitCount = parseInt(cls.limit) || 0;
+            const isFull = currentCount >= limitCount;
+
+            return `
+                <div class="class-card">
+                    <div class="class-info">
+                        <h3>${cls.name}</h3>
+                        <div class="class-meta">
+                            <span>📅 요일: <strong>${cls.day}</strong></span>
+                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
+                        </div>
+                    </div>
+                    <div class="class-status">
+                        <span class="count-badge ${isFull ? 'full' : ''}">
+                            신청인원: ${currentCount} / ${limitCount} 명
+                        </span>
+                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
+                            ${isFull ? '정원 마감' : '신청하기'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function submitRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if (!studentId) {
+            alert("학년을 선택해 주세요.");
+            return;
+        }
+        if (!studentName) {
+            alert("이름을 입력해 주세요.");
+            return;
+        }
+        if (!studentPassword) {
+            alert("확인 및 취소용 비밀번호를 입력해 주세요.");
+            return;
+        }
+
+        fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                initSystem();
+            }
+        })
+        .catch(err => alert("신청 중 오류가 발생했습니다."));
+    }
+
+    function cancelRegistration(className) {
+        const studentId = document.getElementById('studentGrade').value;
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if(!confirm(`정말로 [ ${className} ] 강좌 신청을 취소하시겠습니까?`)) return;
+
+        fetch('/api/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                initSystem();
+            }
+        })
+        .catch(err => alert("취소 처리 중 오류가 발생했습니다."));
+    }
+
+    window.onload = initSystem;
+</script>
+</body>
+</html>

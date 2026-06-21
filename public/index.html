@@ -13,9 +13,10 @@
         .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
         .info-row:last-child { margin-bottom: 0; }
         .info-label { font-weight: bold; color: #475569; }
-        .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; }
-        .form-group input { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .form-group input[id="studentId"] { width: 100px; text-align: center; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; align-items: center; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        /* 학년 선택 박스 스타일 스타일 스타일 */
+        .form-group select[id="studentGrade"] { width: 160px; text-align: center; }
         .form-group input[id="studentName"] { width: 120px; text-align: center; }
         .form-group input[id="studentPassword"] { flex: 1; }
         .class-list { display: flex; flex-direction: column; gap: 15px; }
@@ -49,7 +50,16 @@
     </div>
 
     <div class="form-group">
-        <input type="text" id="studentId" placeholder="학년반 (예: 11)" maxlength="4">
+        <select id="studentGrade">
+            <option value="">-- 학년 선택 --</option>
+            <option value="유치원">유치원</option>
+            <option value="1학년">1학년</option>
+            <option value="2학년">2학년</option>
+            <option value="3학년">3학년</option>
+            <option value="4학년">4학년</option>
+            <option value="5학년">5학년</option>
+            <option value="6학년">6학년</option>
+        </select>
         <input type="text" id="studentName" placeholder="이름" maxlength="10">
         <input type="password" id="studentPassword" placeholder="비밀번호(확인용)" maxlength="20">
     </div>
@@ -107,50 +117,4 @@
                         <h3>${cls.name}</h3>
                         <div class="class-meta">
                             <span>📅 요일: <strong>${cls.day}</strong></span>
-                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
-                        </div>
-                    </div>
-                    <div class="class-status">
-                        <span class="count-badge ${isFull ? 'full' : ''}">
-                            신청인원: ${currentCount} / ${limitCount} 명
-                        </span>
-                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
-                            ${isFull ? '정원 마감' : '신청하기'}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // 신청 처리 함수
-    function submitRegistration(className) {
-        const studentId = document.getElementById('studentId').value.trim();
-        const studentName = document.getElementById('studentName').value.trim();
-        const studentPassword = document.getElementById('studentPassword').value.trim();
-
-        if (!studentId || !studentName) {
-            alert("학년반과 이름을 정확히 입력해 주세요.");
-            return;
-        }
-
-        fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, studentName, className, studentPassword })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            if (data.success) {
-                initSystem(); // 성공 시 리스트 즉시 리로드하여 인원수 갱신
-            }
-        })
-        .catch(err => alert("신청 중 통신 오류가 발생했습니다."));
-    }
-
-    // 초기 실행 코드 강제 보장
-    window.onload = initSystem;
-</script>
-</body>
-</html>
+                            <span>⏰ 시간

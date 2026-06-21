@@ -2,199 +2,155 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>SKS 방과후 신청</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방과후 학교 수강신청</title>
     <style>
-        :root { --sks-navy: #005691; --sks-green: #00843D; --sks-red: #ED1C24; }
-        body { font-family: 'Malgun Gothic', sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f7f9; color: #333; }
-        .header { text-align: center; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .logo-container { width: 100px; height: 100px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; }
-        .logo { max-width: 100%; max-height: 100%; object-fit: contain; }
-        h2 { color: var(--sks-navy); margin: 0; font-size: 22px; line-height: 1.4; }
-        
-        #timer { background: var(--sks-navy); color: white; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 18px; }
-        .input-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
-        .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        input, select { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
-        
-        .class-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--sks-navy); }
-        .class-card.sold-out { border-left-color: #999; opacity: 0.6; }
-        .status-badge { font-size: 12px; padding: 3px 8px; border-radius: 10px; background: #e2e8f0; font-weight: bold; margin-left: 5px; }
-        
-        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; font-size: 14px; }
-        .btn-primary { background: var(--sks-green); color: white; padding: 12px; width: 100%; }
-        .btn-reg { background: var(--sks-navy); color: white; padding: 12px 24px; }
-        .btn-reg:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; }
-        .btn-cancel { background: var(--sks-red); color: white; padding: 6px 12px; font-size: 12px; }
-        .my-list { background: #e7f3ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--sks-navy); }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background-color: #f4f6f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #1e3a8a; text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 15px; }
+        .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 14px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { font-weight: bold; color: #475569; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; }
+        .form-group input { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .form-group input[id="studentId"] { width: 100px; text-align: center; }
+        .form-group input[id="studentName"] { width: 120px; text-align: center; }
+        .form-group input[id="studentPassword"] { flex: 1; }
+        .class-list { display: flex; flex-direction: column; gap: 15px; }
+        .class-card { border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .class-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59,130,246,0.08); }
+        .class-info h3 { margin: 0 0 8px 0; color: #1e293b; font-size: 18px; }
+        .class-meta { font-size: 13px; color: #64748b; display: flex; gap: 15px; }
+        .class-status { text-align: right; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+        .count-badge { font-size: 14px; font-weight: bold; color: #1e3a8a; }
+        .count-badge.full { color: #ef4444; }
+        button.reg-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        button.reg-btn:hover { background-color: #1d4ed8; }
+        button.reg-btn:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="logo-container">
-            <img src="http://www.suzhourks.com/upload/editor/202111/20211116172655_eunpndob.png" alt="SKS Logo" class="logo" onerror="this.src='https://via.placeholder.com/100x100?text=SKS+LOGO'">
+<div class="container">
+    <h1 id="viewMainTitle">방과후 학교</h1>
+    <div class="subtitle" id="viewSubTitle">수강 신청 시스템</div>
+
+    <div class="info-box">
+        <div class="info-row">
+            <span class="info-label">⏱️ 신청 시작 시간:</span>
+            <span id="viewStartTime">-</span>
         </div>
-        <h2 id="dynamic-title">불러오는 중...</h2>
-    </div>
-
-    <div id="timer">서버 시간 및 대기 시간 계산 중...</div>
-
-    <div class="input-box">
-        <div class="row">
-            <select id="grade">
-                <option value="유치원">유치원</option><option value="1학년">1학년</option><option value="2학년">2학년</option>
-                <option value="3학년">3학년</option><option value="4학년">4학년</option><option value="5학년">5학년</option><option value="6학년">6학년</option>
-            </select>
-            <input type="text" id="studentName" placeholder="학생 이름 입력">
-            <input type="password" id="password" placeholder="비밀번호(4자리 이상)">
+        <div class="info-row">
+            <span class="info-label">⌛ 신청 마감 시간:</span>
+            <span id="viewEndTime">-</span>
         </div>
-        <button class="btn-primary" onclick="checkMyClasses()">My 신청 내역 및 조회하기</button>
     </div>
 
-    <div id="my-zone" class="my-list" style="display:none;">
-        <h3 style="margin-top:0; font-size:16px; color: var(--sks-navy);">✅ 내 신청 현황</h3>
-        <div id="my-classes"></div>
+    <div class="form-group">
+        <input type="text" id="studentId" placeholder="학년반 (예: 11)" maxlength="4">
+        <input type="text" id="studentName" placeholder="이름" maxlength="10">
+        <input type="password" id="studentPassword" placeholder="비밀번호(확인용)" maxlength="20">
     </div>
 
-    <h3 style="color: var(--sks-navy); margin-bottom: 15px;">📚 개설 강좌 목록</h3>
-    <div id="class-list">강좌를 불러오는 중입니다...</div>
+    <h2>📚 개설 강좌 목록</h2>
+    <div class="class-list" id="classListContainer">
+        <p style="text-align: center; color: #999; padding: 20px;">강좌 정보를 불러오는 중입니다...</p>
+    </div>
+</div>
 
-    <script>
-        let isRegistrationOpen = false;
-        let timerInterval = null;
-        let targetStartTime = null;
+<script>
+    let systemClasses = [];
+    let registrations = [];
 
-        async function loadData() {
-            try {
-                const res = await fetch('/api/classes');
-                const data = await res.json();
+    // 서버에서 강좌 설정 및 현재 신청 현황 데이터 동시 로드
+    function initSystem() {
+        // 1. 강좌 구조 및 제목 로드
+        fetch('/api/classes')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('viewMainTitle').innerText = data.titles?.mainTitle || '방과후 학교';
+                document.getElementById('viewSubTitle').innerText = data.titles?.subTitle || '수강 신청 시스템';
+                document.getElementById('viewStartTime').innerText = data.config?.startTime ? new Date(data.config.startTime).toLocaleString() : '미지정';
+                document.getElementById('viewEndTime').innerText = data.config?.endTime ? new Date(data.config.endTime).toLocaleString() : '미지정';
+                systemClasses = data.classes || [];
                 
-                // 🆕 서버에서 설정한 제목 반영 메커니즘
-                if(data.titles) {
-                    document.getElementById('dynamic-title').innerHTML = `${data.titles.mainTitle}<br>${data.titles.subTitle}`;
-                }
+                // 2. 신청 현황 카운트 보정을 위한 명단 로드
+                return fetch('/api/status');
+            })
+            .then(res => res.json())
+            .then(regs => {
+                registrations = Array.isArray(regs) ? regs : [];
+                renderClassList();
+            })
+            .catch(err => console.error("데이터 로딩 실패:", err));
+    }
 
-                renderClasses(data.classes);
-                targetStartTime = new Date(data.config.startTime);
-                startTimer(new Date(data.serverTime), targetStartTime);
-            } catch (error) {
-                document.getElementById('class-list').innerText = "강좌를 불러오지 못했습니다.";
-            }
+    // UI에 강좌 카드 그리기 및 실시간 수강 가능 인원 계산 반영
+    function renderClassList() {
+        const container = document.getElementById('classListContainer');
+        if (systemClasses.length === 0) {
+            container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">현재 개설된 방과후 강좌가 없습니다.</p>`;
+            return;
         }
 
-        function renderClasses(classes) {
-            const container = document.getElementById('class-list');
-            container.innerHTML = '';
-            classes.forEach(cls => {
-                const isFull = cls.currentCount >= cls.limit;
-                const div = document.createElement('div');
-                div.className = `class-card ${isFull ? 'sold-out' : ''}`;
-                div.innerHTML = `
-                    <div>
-                        <strong style="font-size:18px; color:#1e293b;">${cls.name}</strong> 
-                        <span class="status-badge" style="color: ${isFull ? 'red' : 'green'}">${cls.currentCount} / ${cls.limit}명</span><br>
-                        <small style="color:#64748b; display:inline-block; margin-top:5px;">📆 ${cls.day}요일 ${cls.startTime}~${cls.endTime}</small>
+        container.innerHTML = systemClasses.map(cls => {
+            // 현재 해당 강좌를 신청한 학생 수 카운트
+            const currentCount = registrations.filter(r => r.className === cls.name).length;
+            const limitCount = parseInt(cls.limit) || 0;
+            const isFull = currentCount >= limitCount;
+
+            return `
+                <div class="class-card">
+                    <div class="class-info">
+                        <h3>${cls.name}</h3>
+                        <div class="class-meta">
+                            <span>📅 요일: <strong>${cls.day}</strong></span>
+                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
+                        </div>
                     </div>
-                    <button class="btn-reg" id="btn-${cls.id}" onclick="register(${cls.id})" ${isFull || !isRegistrationOpen ? 'disabled' : ''}>
-                        ${isFull ? '마감' : (isRegistrationOpen ? '신청하기' : '대기 중')}
-                    </button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function startTimer(serverTime, startTime) {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                serverTime.setSeconds(serverTime.getSeconds() + 1);
-                const diff = startTime - serverTime;
-                const timerEl = document.getElementById('timer');
-                
-                if (diff > 0) {
-                    isRegistrationOpen = false;
-                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-                    const m = Math.floor((diff / 1000 / 60) % 60);
-                    const s = Math.floor((diff / 1000) % 60);
-                    timerEl.innerText = `⏳ 신청 시작까지 ${d}일 ${h}시간 ${m}분 ${s}초 남았습니다`;
-                    timerEl.style.background = "var(--sks-navy)";
-                    document.querySelectorAll('.btn-reg').forEach(b => { if(!b.innerText.includes('마감')) { b.innerText = '대기 중'; b.disabled = true; } });
-                } else {
-                    if (!isRegistrationOpen) {
-                        isRegistrationOpen = true;
-                        document.querySelectorAll('.btn-reg').forEach(b => { if (!b.innerText.includes('마감')) { b.innerText = '신청하기'; b.disabled = false; } });
-                    }
-                    timerEl.innerText = "🟢 현재 방과후 신청 기간입니다!";
-                    timerEl.style.background = "var(--sks-green)";
-                }
-            }, 1000);
-        }
-
-        async function register(classId) {
-            const grade = document.getElementById('grade').value;
-            const studentName = document.getElementById('studentName').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if(!studentName || !password) return alert("이름과 비밀번호를 모두 입력해 주세요.");
-
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ grade, studentName, password, classId })
-            });
-            const result = await res.json();
-            alert(result.message);
-            loadData();
-            if(result.success) setTimeout(checkMyClasses, 200);
-        }
-
-        async function checkMyClasses() {
-            const grade = document.getElementById('grade').value;
-            const studentName = document.getElementById('studentName').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if(!studentName || !password) return alert("이름과 비밀번호를 입력해 주세요.");
-            
-            const res = await fetch('/api/my-classes', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ grade, studentName, password })
-            });
-            const result = await res.json();
-            if(!result.success) return alert(result.message);
-            
-            const zone = document.getElementById('my-zone');
-            const list = document.getElementById('my-classes');
-            zone.style.display = 'block';
-            
-            if(result.classes.length === 0) {
-                list.innerHTML = "<p style='margin:0; color:#64748b; font-size:14px;'>신청된 내역이 없습니다.</p>";
-                return;
-            }
-            list.innerHTML = result.classes.map(c => `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:white; padding:10px; border-radius:5px;">
-                    <span style="font-size:14px;"><b>${c.name}</b> (${c.day}요일)</span>
-                    <button class="btn-cancel" onclick="cancel(${c.id})">신청 취소</button>
+                    <div class="class-status">
+                        <span class="count-badge ${isFull ? 'full' : ''}">
+                            신청인원: ${currentCount} / ${limitCount} 명
+                        </span>
+                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
+                            ${isFull ? '정원 마감' : '신청하기'}
+                        </button>
+                    </div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
+    }
+
+    // 신청 처리 함수
+    function submitRegistration(className) {
+        const studentId = document.getElementById('studentId').value.trim();
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentPassword = document.getElementById('studentPassword').value.trim();
+
+        if (!studentId || !studentName) {
+            alert("학년반과 이름을 정확히 입력해 주세요.");
+            return;
         }
 
-        async function cancel(classId) {
-            if(!confirm("해당 수강 신청을 취소하시겠습니까?")) return;
-            const grade = document.getElementById('grade').value;
-            const studentName = document.getElementById('studentName').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            const res = await fetch('/api/cancel', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ grade, studentName, password, classId })
-            });
-            const result = await res.json();
-            alert(result.message);
-            loadData();
-            setTimeout(checkMyClasses, 200);
-        }
+        fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className, studentPassword })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                initSystem(); // 성공 시 리스트 즉시 리로드하여 인원수 갱신
+            }
+        })
+        .catch(err => alert("신청 중 통신 오류가 발생했습니다."));
+    }
 
-        loadData();
-    </script>
+    // 초기 실행 코드 강제 보장
+    window.onload = initSystem;
+</script>
 </body>
 </html>

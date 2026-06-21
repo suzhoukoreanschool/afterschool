@@ -16,10 +16,14 @@
         
         .form-group { display: flex; gap: 10px; margin-bottom: 25px; background: #edf2f7; padding: 15px; border-radius: 8px; align-items: center; }
         .form-group select, .form-group input { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        #studentGrade { width: 150px; text-align: center; }
-        #studentName { width: 120px; text-align: center; }
+        #studentGrade { width: 140px; text-align: center; }
+        #studentName { width: 110px; text-align: center; }
         #studentPassword { flex: 1; }
         
+        /* 🔘 조회용 단추 스타일 */
+        button.check-btn { background-color: #0f172a; color: white; padding: 10px 15px; font-size: 14px; font-weight: bold; border-radius: 6px; white-space: nowrap; }
+        button.check-btn:hover { background-color: #334155; }
+
         .my-status-section { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: none; }
         .my-status-title { font-size: 16px; font-weight: bold; color: #166534; margin-top: 0; margin-bottom: 12px; }
         .my-class-item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 15px; border-radius: 6px; border: 1px solid #dcfce7; margin-bottom: 8px; }
@@ -61,7 +65,7 @@
     </div>
 
     <div class="form-group">
-        <select id="studentGrade" onchange="updateView()">
+        <select id="studentGrade">
             <option value="">-- 학년 선택 --</option>
             <option value="유치원">유치원</option>
             <option value="1학년">1학년</option>
@@ -71,152 +75,9 @@
             <option value="5학년">5학년</option>
             <option value="6학년">6학년</option>
         </select>
-        <input type="text" id="studentName" placeholder="학생 이름" maxlength="10" oninput="updateView()">
-        <input type="password" id="studentPassword" placeholder="비밀번호(확인 및 취소용)" maxlength="20" oninput="updateView()">
+        <input type="text" id="studentName" placeholder="학생 이름" maxlength="10">
+        <input type="password" id="studentPassword" placeholder="비밀번호" maxlength="20">
+        <button class="check-btn" onclick="checkMyStatus()">나의 신청내역 확인</button>
     </div>
 
     <div class="my-status-section" id="myStatusSection">
-        <div class="my-status-title">🔔 나의 수강 신청 완료 내역</div>
-        <div id="myClassListContainer"></div>
-    </div>
-
-    <h2>📚 개설 강좌 목록</h2>
-    <div class="class-list" id="classListContainer">
-        <p style="text-align: center; color: #999; padding: 20px;">강좌 정보를 불러오는 중입니다...</p>
-    </div>
-
-    <div class="footer">
-        소주한국학교
-    </div>
-</div>
-
-<script>
-    let systemClasses = [];
-    let registrations = [];
-
-    function initSystem() {
-        fetch('/api/classes')
-            .then(res => res.json())
-            .then(data => {
-                if (data) {
-                    document.getElementById('viewMainTitle').innerText = data.titles?.mainTitle || '방과후 학교';
-                    document.getElementById('viewSubTitle').innerText = data.titles?.subTitle || '수강 신청 시스템';
-                    document.getElementById('viewStartTime').innerText = data.config?.startTime || '미지정';
-                    document.getElementById('viewEndTime').innerText = data.config?.endTime || '미지정';
-                    systemClasses = Array.isArray(data.classes) ? data.classes : [];
-                }
-                return fetch('/api/status');
-            })
-            .then(res => res.json())
-            .then(regs => {
-                registrations = Array.isArray(regs) ? regs : [];
-                updateView();
-            })
-            .catch(err => console.error("데이터 동기화 실패:", err));
-    }
-
-    function updateView() {
-        const grade = document.getElementById('studentGrade').value;
-        const name = document.getElementById('studentName').value.trim();
-        const password = document.getElementById('studentPassword').value.trim();
-        
-        const statusSection = document.getElementById('myStatusSection');
-        const myContainer = document.getElementById('myClassListContainer');
-        
-        // 데이터 구조와 완전히 통일하여 대조
-        if (grade && name && password) {
-            const myRegs = registrations.filter(r => r.studentId === grade && r.studentName === name && r.studentPassword === password);
-            if (myRegs.length > 0) {
-                statusSection.style.display = 'block';
-                myContainer.innerHTML = myRegs.map(r => `
-                    <div class="my-class-item">
-                        <div><strong>${r.className}</strong> <span style="font-size:12px; color:#666; margin-left:10px;">(신청완료)</span></div>
-                        <button class="cancel-btn" onclick="cancelRegistration('${r.className}')">신청 취소</button>
-                    </div>
-                `).join('');
-            } else {
-                statusSection.style.display = 'none';
-            }
-        } else {
-            statusSection.style.display = 'none';
-        }
-
-        const container = document.getElementById('classListContainer');
-        if (!systemClasses || systemClasses.length === 0) {
-            container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">현재 개설된 방과후 강좌가 없습니다.</p>`;
-            return;
-        }
-
-        container.innerHTML = systemClasses.map(cls => {
-            const currentCount = registrations.filter(r => r.className === cls.name).length;
-            const limitCount = parseInt(cls.limit) || 0;
-            const isFull = currentCount >= limitCount;
-
-            return `
-                <div class="class-card">
-                    <div class="class-info">
-                        <h3>${cls.name}</h3>
-                        <div class="class-meta">
-                            <span>📅 요일: <strong>${cls.day}</strong></span>
-                            <span>⏰ 시간: ${cls.startTime} ~ ${cls.endTime}</span>
-                        </div>
-                    </div>
-                    <div class="class-status">
-                        <span class="count-badge ${isFull ? 'full' : ''}">
-                            신청인원: ${currentCount} / ${limitCount} 명
-                        </span>
-                        <button class="reg-btn" ${isFull ? 'disabled' : ''} onclick="submitRegistration('${cls.name}')">
-                            ${isFull ? '정원 마감' : '신청하기'}
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function submitRegistration(className) {
-        const studentId = document.getElementById('studentGrade').value;
-        const studentName = document.getElementById('studentName').value.trim();
-        const studentPassword = document.getElementById('studentPassword').value.trim();
-
-        if (!studentId) return alert("학년을 선택해 주세요.");
-        if (!studentName) return alert("이름을 입력해 주세요.");
-        if (!studentPassword) return alert("비밀번호를 입력해 주세요.");
-
-        fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, studentName, className, studentPassword })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            initSystem();
-        })
-        .catch(err => alert("신청 중 오류가 발생했습니다."));
-    }
-
-    function cancelRegistration(className) {
-        const studentId = document.getElementById('studentGrade').value;
-        const studentName = document.getElementById('studentName').value.trim();
-        const studentPassword = document.getElementById('studentPassword').value.trim();
-
-        if(!confirm(`정말로 [ ${className} ] 강좌 신청을 취소하시겠습니까?`)) return;
-
-        fetch('/api/cancel', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, studentName, className, studentPassword })
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            initSystem();
-        })
-        .catch(err => alert("취소 처리 중 오류가 발생했습니다."));
-    }
-
-    window.onload = initSystem;
-</script>
-</body>
-</html>

@@ -84,12 +84,17 @@
     </div>
 
     <script>
+        // 날짜 변환 시 에러 방지 처리 보강
         function toLocalDateTimeString(dateStr) {
             if (!dateStr) return '';
-            const dateObj = new Date(dateStr);
-            if (isNaN(dateObj.getTime())) return '';
-            const tzOffset = dateObj.getTimezoneOffset() * 60000;
-            return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
+            try {
+                const dateObj = new Date(dateStr);
+                if (isNaN(dateObj.getTime())) return '';
+                const tzOffset = dateObj.getTimezoneOffset() * 60000;
+                return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
+            } catch (e) {
+                return '';
+            }
         }
 
         // 1. 페이지 로딩 시 DB 보관 설정값 원본 가져오기
@@ -172,7 +177,7 @@
             addClassRow();
         });
 
-        // 2. 설정 일괄 반영하기 버튼 누르면 실시간 백엔드로 쏴서 클라우드 DB 보관
+        // 2. 설정 일괄 반영하기 버튼 이벤트 (시간 데이터 예외 우회 로직 적용)
         document.getElementById('saveAllBtn').addEventListener('click', () => {
             const classes = [];
             let isValid = true;
@@ -199,11 +204,15 @@
                 return;
             }
 
+            // 날짜 입력창에서 값을 가져올 때 비어있으면 안전하게 null 처리하도록 변환 에러 예방
+            const startVal = document.getElementById('startTime').value;
+            const endVal = document.getElementById('endTime').value;
+
             const payload = {
                 mainTitle: document.getElementById('mainTitle').value,
                 subTitle: document.getElementById('subTitle').value,
-                startTime: document.getElementById('startTime').value || null,
-                endTime: document.getElementById('endTime').value || null,
+                startTime: startVal ? new Date(startVal).toISOString() : null,
+                endTime: endVal ? new Date(endVal).toISOString() : null,
                 classes: classes
             };
 
@@ -216,9 +225,14 @@
             .then(resData => {
                 if(resData.success) {
                     alert("🎉 설정 정보가 클라우드 DB에 영구 보관되었습니다. 이제 새로고침해도 안전합니다.");
-                    loadSystemConfig(); // 저장 완료 후 동기화 재확인
+                    loadSystemConfig();
+                } else {
+                    alert("⚠️ 저장 중 에러가 발생했습니다: " + resData.message);
                 }
-            }).catch(err => alert("저장 실패했습니다."));
+            }).catch(err => {
+                console.error(err);
+                alert("네트워크 연결 또는 서버 오류가 발생했습니다.");
+            });
         });
 
         // 3. 학생 신청자 명단 조회

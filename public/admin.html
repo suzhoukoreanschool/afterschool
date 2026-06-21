@@ -2,289 +2,217 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>방과후 시스템 관리자 페이지</title>
+    <title>방과후 제어 관리자 시스템</title>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 30px; background-color: #f4f6f9; color: #333; }
-        h1, h2 { color: #1e3a8a; }
-        .admin-section { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input[type="text"], input[type="datetime-local"], select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        input[type="text"], input[type="datetime-local"] { width: 100%; }
-        .class-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: #f9f9f9; padding: 10px; border-radius: 5px; }
-        .class-row input, .class-row select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background-color: #1e3a8a; color: white; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
-        button:hover { background-color: #172554; }
-        .add-btn { background-color: #10b981; }
-        .add-btn:hover { background-color: #059669; }
-        .remove-btn { background-color: #ef4444; padding: 8px 12px; }
-        .remove-btn:hover { background-color: #dc2626; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f1f5f9; color: #1e3a8a; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; background-color: #f8fafc; color: #1e293b; }
+        .box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center; }
+        input, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 14px; }
+        .btn { padding: 10px 15px; background: #2563eb; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-add { background: #10b981; margin-bottom: 15px; }
+        .btn-add:hover { background: #059669; }
+        .btn-save { background: #ef4444; width: 100%; font-size: 16px; padding: 15px; margin-bottom: 25px; }
+        .btn-save:hover { background: #and2626; }
+        .class-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; align-items: center; background: #f1f5f9; padding: 10px; border-radius: 6px; }
+        .btn-del { background: #b91c1c; padding: 6px 10px; }
+        
+        /* 실시간 테이블 스타일 추가 */
+        .live-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .live-table th, .live-table td { border: 1px solid #cbd5e1; padding: 10px; text-align: center; }
+        .live-table th { background-color: #e2e8f0; color: #334155; }
+        .live-table tr:hover { background-color: #f1f5f9; }
+        .btn-kick { background-color: #dc2626; color: white; padding: 4px 8px; font-size: 12px; border-radius: 4px; }
+        .btn-kick:hover { background-color: #991b1b; }
+        .btn-reset-all { background-color: #475569; margin-top: 10px; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <h1>🛠️ 방과후 학교 관리자 시스템</h1>
-    <p>강좌 정보 설정, 신청 시간 통제, 신청 현황 확인을 관리합니다.</p>
-
-    <div class="admin-section">
-        <h2>🏷️ 메인 화면 제목 설정</h2>
-        <label>대제목 (학교명 또는 소속)</label>
-        <input type="text" id="mainTitle">
-        <label>소제목 (학기 정보 및 안내)</label>
-        <input type="text" id="subTitle">
+    <h1>🛠️ 방과후 학교 관리자 제어탑</h1>
+    
+    <div class="box">
+        <h2>1. 전광판 타이틀 및 운영 시간 조율</h2>
+        <div class="form-grid">
+            <label>메인 타이틀</label>
+            <input type="text" id="mainTitle" value="방과후 학교">
+            <label>서브 타이틀</label>
+            <input type="text" id="subTitle" value="수강 신청 시스템">
+            <label>신청 시작 시간</label>
+            <input type="datetime-local" id="startTime">
+            <label>신청 마감 시간</label>
+            <input type="datetime-local" id="endTime">
+        </div>
     </div>
 
-    <div class="admin-section">
-        <h2>⏰ 수강 신청 기간 설정</h2>
-        <label>신청 시작 시간</label>
-        <input type="datetime-local" id="startTime">
-        <label>신청 마감 시간</label>
-        <input type="datetime-local" id="endTime">
-    </div>
-
-    <div class="admin-section">
-        <h2>📚 방과후 강좌 구성 변경</h2>
+    <div class="box">
+        <h2>2. 개설 강좌 편집 및 인원제한 제어</h2>
+        <button class="btn btn-add" onclick="addClassRow()">➕ 강좌 추가</button>
         <div id="classContainer"></div>
-        <button type="button" class="add-btn" id="addClassBtn">➕ 강좌 추가</button>
     </div>
 
-    <div style="text-align: center; margin-bottom: 40px;">
-        <button id="saveAllBtn" style="background-color: #2563eb; font-size: 18px; padding: 15px 40px; border-radius: 30px; box-shadow: 0 4px 10px rgba(37,99,235,0.3);">
-            💾 위 시스템 설정 일괄 반영하기
-        </button>
-    </div>
+    <button class="btn btn-save" onclick="saveAllSettings()">💾 위 시스템 설정 일괄 반영하기</button>
 
-    <div class="admin-section">
-        <h2>📊 전체 학생 수강 신청 결과 명단</h2>
-        <button id="refreshListBtn" style="background-color: #475569;">🔄 명단 실시간 새로고침</button>
-        <button id="downloadExcelBtn" style="background-color: #047857; margin-left: 10px;">📥 엑셀(CSV) 결과 다운로드</button>
-        <table>
+    <div class="box">
+        <h2>📊 3. 실시간 수강 신청 현황 및 명단 관리</h2>
+        <p style="font-size:13px; color:#64748b; margin: 0 0 15px 0;">* 학생들이 신청한 현황이 실시간으로 집계됩니다. 잘못 입력된 명단은 [삭제] 단추로 즉시 취소할 수 있습니다.</p>
+        <table class="live-table">
             <thead>
                 <tr>
-                    <th>학년반</th>
-                    <th>이름</th>
-                    <th>신청 강좌</th>
+                    <th>지정 학년</th>
+                    <th>학생 이름</th>
+                    <th>신청 강좌명</th>
+                    <th>비밀번호(대조용)</th>
                     <th>신청 시각</th>
+                    <th>관리 명령</th>
                 </tr>
             </thead>
-            <tbody id="studentListTableBody">
-                <tr><td colspan="4" style="text-align: center; color: #999;">로딩 중...</td></tr>
+            <tbody id="liveListContainer">
+                <tr>
+                    <td colspan="6" style="color:#94a3b8;">신청된 데이터가 아직 없습니다.</td>
+                </tr>
             </tbody>
         </table>
+        <button class="btn btn-reset-all" onclick="resetAllRegistrations()">⚠️ 전체 신청내역 포맷(초기화)</button>
     </div>
 
-    <div class="admin-section" style="border: 1px solid #ff4d4d; background-color: #fff5f5; padding: 20px; border-radius: 8px; margin-top: 40px;">
-        <h3 style="color: #d32f2f; margin-top: 0;">⚠️ 새 학기 데이터 초기화 구역</h3>
-        <p style="color: #666; font-size: 14px;">다음 학기 세팅을 위해 <strong>기존 수강 신청 내역을 전체 삭제</strong>합니다.</p>
-        <button id="resetDataBtn" style="background-color: #d32f2f; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer;">
-            🔄 지난 신청 내역 전체 초기화
-        </button>
-    </div>
-
-    <script>
-        function toLocalDateTimeString(dateStr) {
-            if (!dateStr) return '';
-            try {
-                const dateObj = new Date(dateStr);
-                if (isNaN(dateObj.getTime())) return '';
-                const tzOffset = dateObj.getTimezoneOffset() * 60000;
-                return (new Date(dateObj.getTime() - tzOffset)).toISOString().slice(0, 16);
-            } catch (e) {
-                return '';
-            }
-        }
-
-        function loadSystemConfig() {
-            fetch('/api/classes')
-                .then(res => res.json())
-                .then(data => {
-                    if (!data) return;
-                    document.getElementById('mainTitle').value = data.titles?.mainTitle || '';
-                    document.getElementById('subTitle').value = data.titles?.subTitle || '';
-                    if(data.config?.startTime) document.getElementById('startTime').value = toLocalDateTimeString(data.config.startTime);
-                    if(data.config?.endTime) document.getElementById('endTime').value = toLocalDateTimeString(data.config.endTime);
+<script>
+    function loadCurrentSettings() {
+        // 강좌 목록 가져오기
+        fetch('/api/classes')
+            .then(res => res.json())
+            .then(data => {
+                if(data) {
+                    document.getElementById('mainTitle').value = data.titles?.mainTitle || '방과후 학교';
+                    document.getElementById('subTitle').value = data.titles?.subTitle || '수강 신청 시스템';
+                    document.getElementById('startTime').value = data.config?.startTime || '';
+                    document.getElementById('endTime').value = data.config?.endTime || '';
                     
                     const container = document.getElementById('classContainer');
                     container.innerHTML = '';
-                    if (data.classes && Array.isArray(data.classes)) {
-                        data.classes.forEach(cls => addClassRow(cls));
+                    if(Array.isArray(data.classes)) {
+                        data.classes.forEach(cls => addClassRow(cls.name, cls.day, cls.startTime, cls.endTime, cls.limit));
                     }
-                }).catch(err => console.error("설정 로드 실패:", err));
-        }
-
-        function handleDayChange(selectElement) {
-            const row = selectElement.parentElement;
-            const startTimeInput = row.querySelector('.cls-start');
-            const endTimeInput = row.querySelector('.cls-end');
-            const selectedDay = selectElement.value;
-
-            if (['월', '화', '수', '목'].includes(selectedDay)) {
-                startTimeInput.value = '15:30';
-                endTimeInput.value = '16:10';
-            } else if (selectedDay === '토1' || selectedDay === '토요일(1교시)') {
-                startTimeInput.value = '08:50';
-                endTimeInput.value = '10:20';
-            } else if (selectedDay === '토2' || selectedDay === '토요일(2교시)') {
-                startTimeInput.value = '10:30';
-                endTimeInput.value = '12:00';
-            } else {
-                startTimeInput.value = '';
-                endTimeInput.value = '';
-            }
-        }
-
-        function addClassRow(data) {
-            const container = document.getElementById('classContainer');
-            if (!container) return;
-
-            const row = document.createElement('div');
-            row.className = 'class-row';
-            
-            const cls = data || { name: '', day: '', startTime: '', endTime: '', limit: '' };
-            let currentDay = cls.day || '';
-            
-            if(currentDay === '토요일(1교시)') currentDay = '토1';
-            if(currentDay === '토요일(2교시)') currentDay = '토2';
-
-            row.innerHTML = `
-                <input type="text" placeholder="강좌명" class="cls-name" value="${cls.name}">
-                <select class="cls-day" onchange="handleDayChange(this)" style="width:130px; text-align:center;">
-                    <option value="">-- 요일 선택 --</option>
-                    <option value="월" ${currentDay === '월' ? 'selected' : ''}>월요일</option>
-                    <option value="화" ${currentDay === '화' ? 'selected' : ''}>화요일</option>
-                    <option value="수" ${currentDay === '수' ? 'selected' : ''}>수요일</option>
-                    <option value="목" ${currentDay === '목' ? 'selected' : ''}>목요일</option>
-                    <option value="토1" ${currentDay === '토1' ? 'selected' : ''}>토요일(1교시)</option>
-                    <option value="토2" ${currentDay === '토2' ? 'selected' : ''}>토요일(2교시)</option>
-                </select>
-                <input type="text" placeholder="시작 시간" class="cls-start" value="${cls.startTime}">
-                <input type="text" placeholder="종료 시간" class="cls-end" value="${cls.endTime}">
-                <span style="font-size:13px; color:#666;">정원:</span>
-                <input type="text" placeholder="정원" class="cls-limit" value="${cls.limit}" style="width:50px; text-align:center;"> 명
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">❌ 삭제</button>
-            `;
-            container.appendChild(row);
-        }
-
-        document.getElementById('addClassBtn').addEventListener('click', function() {
-            addClassRow();
-        });
-
-        // 브라우저 측 타임존 변환 실패 에러를 완벽히 우회하도록 전면 개정
-        document.getElementById('saveAllBtn').addEventListener('click', () => {
-            const classes = [];
-            let isValid = true;
-
-            document.querySelectorAll('.class-row').forEach(row => {
-                const dayValue = row.querySelector('.cls-day').value;
-                if(!dayValue) isValid = false;
-
-                let displayDay = dayValue;
-                if(dayValue === '토1') displayDay = '토요일(1교시)';
-                if(dayValue === '토2') displayDay = '토요일(2교시)';
-
-                classes.push({
-                    name: row.querySelector('.cls-name').value,
-                    day: displayDay,
-                    startTime: row.querySelector('.cls-start').value,
-                    endTime: row.querySelector('.cls-end').value,
-                    limit: row.querySelector('.cls-limit').value
-                });
-            });
-
-            if(!isValid) {
-                alert("⚠️ 요일이 선택되지 않은 강좌가 있습니다. 요일을 선택해 주세요.");
-                return;
-            }
-
-            // 날짜 변환 시 에러가 나면 무조건 null로 우회하도록 직접 안전 처리
-            const startVal = document.getElementById('startTime').value;
-            const endVal = document.getElementById('endTime').value;
-
-            const payload = {
-                mainTitle: document.getElementById('mainTitle').value,
-                subTitle: document.getElementById('subTitle').value,
-                startTime: startVal ? startVal : null,
-                endTime: endVal ? endVal : null,
-                classes: classes
-            };
-
-            fetch('/api/admin/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                }
+                // 실시간 명단 연속 가져오기
+                return fetch('/api/status');
             })
             .then(res => res.json())
-            .then(resData => {
-                if(resData.success) {
-                    alert("🎉 설정 정보가 클라우드 DB에 영구 보관되었습니다. 이제 새로고침해도 안전합니다.");
-                    loadSystemConfig();
-                } else {
-                    alert("⚠️ 저장 중 에러가 발생했습니다: " + resData.message);
-                }
-            }).catch(err => {
-                console.error(err);
-                alert("네트워크 연결 또는 서버 오류가 발생했습니다.");
-            });
-        });
+            .then(regs => {
+                renderLiveTable(regs);
+            })
+            .catch(err => console.error("데이터 로드 실패:", err));
+    }
 
-        function loadStudentList() {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(list => {
-                    const tbody = document.getElementById('studentListTableBody');
-                    if(!Array.isArray(list) || list.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #999;">현재 등록된 신청 명단이 없습니다.</td></tr>`;
-                        return;
-                    }
-                    tbody.innerHTML = list.map(s => `
-                        <tr>
-                            <td>${s.studentId || '-'}</td>
-                            <td>${s.studentName || '-'}</td>
-                            <td style="font-weight:bold; color:#1e3a8a;">${s.className || '-'}</td>
-                            <td style="color:#777; font-size:13px;">${s.timestamp ? new Date(s.timestamp).toLocaleString() : '-'}</td>
-                        </tr>
-                    `).join('');
-                }).catch(err => console.error(err));
+    // 실시간 명단 테이블 그리기
+    function renderLiveTable(regs) {
+        const container = document.getElementById('liveListContainer');
+        if(!regs || regs.length === 0) {
+            container.innerHTML = `<tr><td colspan="6" style="color:#94a3b8; padding:20px;">신청 내역이 비어 있습니다.</td></tr>`;
+            return;
         }
 
-        document.getElementById('refreshListBtn').addEventListener('click', loadStudentList);
+        container.innerHTML = regs.map(r => {
+            const localTime = new Date(r.timestamp).toLocaleString();
+            return `
+                <tr>
+                    <td><strong>${r.studentId}</strong></td>
+                    <td>${r.studentName}</td>
+                    <td><span style="color:#2563eb; font-weight:bold;">${r.className}</span></td>
+                    <td style="color:#94a3b8; font-size:12px;">${r.studentPassword || '없음'}</td>
+                    <td style="color:#64748b; font-size:12px;">${localTime}</td>
+                    <td>
+                        <button class="btn btn-kick" onclick="kickStudent('${r.studentId}', '${r.studentName}', '${r.className}')">삭제</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
 
-        document.getElementById('downloadExcelBtn').addEventListener('click', () => {
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(list => {
-                    if(!Array.isArray(list) || list.length === 0) return alert("다운로드할 데이터가 없습니다.");
-                    let csvContent = "\uFEFF학년반,이름,신청강좌,신청시간\n";
-                    list.forEach(s => {
-                        csvContent += `"${s.studentId || ''}","${s.studentName || ''}","${s.className || ''}","${s.timestamp || ''}"\n`;
-                    });
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute("download", `방과후신청결과_${new Date().toLocaleDateString()}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
+    // ❌ [핵심 기능] 잘못 신청한 아이 개별 강제 취소 명령
+    function kickStudent(studentId, studentName, className) {
+        if(!confirm(`[관리자 권한]\n${studentId} ${studentName} 학생의 [${className}] 강좌 신청을 강제로 삭제하시겠습니까?`)) return;
+
+        fetch('/api/admin/kick', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, studentName, className })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            // 삭제 성공 후 최신 명단 즉시 갱신
+            fetch('/api/status').then(res => res.json()).then(regs => renderLiveTable(regs));
+        })
+        .catch(err => alert("삭제 중 통신 오류가 발생했습니다."));
+    }
+
+    function addClassRow(name='', day='월요일', start='', end='', limit='20') {
+        const container = document.getElementById('classContainer');
+        const div = document.createElement('div');
+        div.className = 'class-row';
+        div.innerHTML = `
+            <input type="text" class="cls-name" placeholder="강좌명" value="${name}">
+            <select class="cls-day">
+                <option value="월요일" ${day==='월요일'?'selected':''}>월요일</option>
+                <option value="화요일" ${day==='화요일'?'selected':''}>화요일</option>
+                <option value="수요일" ${day==='수요일'?'selected':''}>수요일</option>
+                <option value="목요일" ${day==='목요일'?'selected':''}>목요일</option>
+                <option value="금요일" ${day==='금요일'?'selected':''}>금요일</option>
+            </select>
+            <input type="text" class="cls-start" placeholder="13:00" value="${start}">
+            <input type="text" class="cls-end" placeholder="14:30" value="${end}">
+            <input type="number" class="cls-limit" placeholder="정원" value="${limit}">
+            <button class="btn btn-del" onclick="this.parentElement.remove()">삭제</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function saveAllSettings() {
+        const mainTitle = document.getElementById('mainTitle').value.trim();
+        const subTitle = document.getElementById('subTitle').value.trim();
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        
+        const rows = document.querySelectorAll('.class-row');
+        const classes = [];
+        
+        rows.forEach(row => {
+            const name = row.querySelector('.cls-name').value.trim();
+            const day = row.querySelector('.cls-day').value;
+            const startTime = row.querySelector('.cls-start').value.trim();
+            const endTime = row.querySelector('.cls-end').value.trim();
+            const limit = row.querySelector('.cls-limit').value.trim();
+            
+            if(name) {
+                classes.push({ name, day, startTime, endTime, limit });
+            }
         });
 
-        document.getElementById('resetDataBtn').addEventListener('click', function() {
-            if (!confirm("⚠️ 정말로 신청 내역을 모두 삭제하시겠습니까?")) return;
-            fetch('/api/admin/reset', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    loadStudentList();
-                }
-            }).catch(err => alert("통신 오류가 발생했습니다."));
-        });
+        fetch('/api/admin/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mainTitle, subTitle, startTime, endTime, classes })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert("설정이 안전하게 일괄 저장되었습니다.");
+        })
+        .catch(err => alert("저장 에러가 발생했습니다."));
+    }
 
-        loadSystemConfig();
-        loadStudentList();
-    </script>
+    function resetAllRegistrations() {
+        if(!confirm("⚠️ 경고!\n현재까지 접수된 모든 학생들의 수강 신청 내역을 완전히 리셋하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
+        fetch('/api/admin/reset', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            fetch('/api/status').then(res => res.json()).then(regs => renderLiveTable(regs));
+        });
+    }
+
+    window.onload = loadCurrentSettings;
+</script>
 </body>
 </html>
